@@ -6,6 +6,7 @@ package checkers;
 public class App {
 
     public static void main(String[] args) {
-        CheckersBoard.initBoard().printBoard();
+        CheckersBoard game = CheckersBoard.initBoard();
+        game.play();
     }
 }

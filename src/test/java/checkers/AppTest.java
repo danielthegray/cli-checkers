@@ -3,6 +3,7 @@
  */
 package checkers;
 
+import checkers.exception.BadMoveException;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -12,5 +13,37 @@ public class AppTest {
 		CheckersBoard initBoard = CheckersBoard.initBoard();
 		assertEquals(12, initBoard.countPiecesOfPlayer(CheckersBoard.Player.BLACK));
 		assertEquals(12, initBoard.countPiecesOfPlayer(CheckersBoard.Player.RED));
+	}
+
+	@Test
+	public void moveTest() {
+		CheckersBoard initBoard = CheckersBoard.initBoard();
+		try {
+			initBoard.doMove(2, 1, 3, 0);
+		} catch (BadMoveException ex) {
+			assertEquals("You must move YOUR pieces!", ex.getMessage());
+		}
+		try {
+			initBoard.doMove(5, 0, -1, 4);
+		} catch (BadMoveException ex) {
+			assertEquals("All coordinates must be between [0-7]!", ex.getMessage());
+		}
+		try {
+			initBoard.doMove(6, 1, 5, 0);
+		} catch (BadMoveException ex) {
+			assertEquals("You can only move into empty spaces!", ex.getMessage());
+		}
+		try {
+			initBoard.doMove(5, 2, 3, 4);
+		} catch (BadMoveException ex) {
+			assertEquals("You can only capture your opponent's pieces!", ex.getMessage());
+		}
+		try {
+			initBoard.doMove(5, 0, 3, 6);
+			fail("An invalid move was accepted!");
+		} catch (BadMoveException ex) {
+			assertEquals("You can only move 1 space away, or capture 2 spaces away!", ex.getMessage());
+		}
+
 	}
 }
