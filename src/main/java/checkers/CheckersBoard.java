@@ -14,7 +14,7 @@ public class CheckersBoard {
 	public static final char EMPTY = ' ';
 
 	private char[][] board;
-	private Player currentTurn;
+	private Player currentPlayer;
 
 	public CheckersBoard() {
 		board = new char[8][8];
@@ -25,7 +25,7 @@ public class CheckersBoard {
 	}
 
 	public Player otherPlayer() {
-		if (currentTurn == Player.BLACK) {
+		if (currentPlayer == Player.BLACK) {
 			return Player.RED;
 		}
 		return Player.BLACK;
@@ -33,7 +33,7 @@ public class CheckersBoard {
 
 	public static CheckersBoard initBoard() {
 		CheckersBoard startingBoard = new CheckersBoard();
-		startingBoard.currentTurn = Player.BLACK;
+		startingBoard.currentPlayer = Player.BLACK;
 		boolean invalidSquare = true;
 		for (int i = 0; i < 8; i++) {
 			for (int j = 0; j < 8; j++) {
@@ -50,24 +50,27 @@ public class CheckersBoard {
 				}
 				invalidSquare = !invalidSquare;
 			}
+			// the color of the first square of a new row is
+			// the same color as the last square of the previous row
+			// so we "revert" the color flip
+			// otherwise, we end up with a vertically-striped board
 			invalidSquare = !invalidSquare;
 		}
 		return startingBoard;
 	}
 
 	public void printBoard() {
-
 		System.out.println("     0   1   2   3   4   5   6   7  ");
 		for (int i = 0; i < 8; i++) {
 			System.out.println("   " + "+---".repeat(8) + "+");
-			System.out.print(i +"  ");
+			System.out.print(i + "  ");
 			for (int j = 0; j < 8; j++) {
 				System.out.print("| " + board[i][j] + " ");
 			}
 			System.out.println("|");
 		}
 		System.out.println("   " + "+---".repeat(8) + "+");
-		System.out.println("The current player is: " + currentTurn);
+		System.out.println("The current player is: " + currentPlayer);
 	}
 
 	public int countPiecesOfPlayer(Player player) {
@@ -84,55 +87,61 @@ public class CheckersBoard {
 	}
 
 	private boolean isEnemyPiece(int i, int j) {
-		return (currentTurn == Player.BLACK && Character.toLowerCase(board[i][j]) == 'r') ||
-			 (currentTurn == Player.RED && Character.toLowerCase(board[i][j]) == 'b');
+		return (currentPlayer == Player.BLACK && Character.toLowerCase(board[i][j]) == 'r')//
+				|| (currentPlayer == Player.RED && Character.toLowerCase(board[i][j]) == 'b');
 	}
 
 	public boolean isMovePossible() {
-		for (int i=0; i<8; i++) {
-			for (int j=0; j<8; j++) {
-				if (currentTurn == Player.RED && Character.toLowerCase(board[i][j]) != 'r') {
+		for (int i = 0; i < 8; i++) {
+			for (int j = 0; j < 8; j++) {
+				if (isNotMyPiece(i, j)) {
 					continue;
 				}
-				if (currentTurn == Player.BLACK && Character.toLowerCase(board[i][j]) != 'b') {
-					continue;
-				}
-				if (i < 7 && j < 7 && board[i+1][j+1] == EMPTY && board[i][j] != BLACK_PLAIN) {
-					return true;
-				}
-				if (i > 0 && j > 0 && board[i-1][j-1] == EMPTY && board[i][j] != RED_PLAIN) {
-					return true;
-				}
-				if (i < 7 && j > 0 && board[i+1][j-1] == EMPTY && board[i][j] != BLACK_PLAIN) {
-					return true;
-				}
-				if (i > 0 && j < 7 && board[i-1][j+1] == EMPTY && board[i][j] != RED_PLAIN) {
+				if (isDownRightMovePossible(i, j)//
+						|| isUpLeftMovePossible(i, j)//
+						|| isDownLeftMovePossible(i, j)//
+						|| isUpRightMovePossible(i, j)) {
 					return true;
 				}
 			}
 		}
 		return false;
+	}
+
+	private boolean isUpRightMovePossible(int i, int j) {
+		return i > 0 && j < 7 && board[i - 1][j + 1] == EMPTY
+				// we exclude the non-crowned piece that cannot move in this direction
+				&& board[i][j] != RED_PLAIN;
+	}
+
+	private boolean isDownLeftMovePossible(int i, int j) {
+		return i < 7 && j > 0 && board[i + 1][j - 1] == EMPTY
+				// we exclude the non-crowned piece that cannot move in this direction
+				&& board[i][j] != BLACK_PLAIN;
+	}
+
+	private boolean isUpLeftMovePossible(int i, int j) {
+		return i > 0 && j > 0 && board[i - 1][j - 1] == EMPTY
+				// we exclude the non-crowned piece that cannot move in this direction
+				&& board[i][j] != RED_PLAIN;
+	}
+
+	private boolean isDownRightMovePossible(int i, int j) {
+		return i < 7 && j < 7 && board[i + 1][j + 1] == EMPTY
+				// we exclude the non-crowned piece that cannot move in this direction
+				&& board[i][j] != BLACK_PLAIN;
 	}
 
 	public boolean isCapturePossible() {
-		for (int i=0; i<8; i++) {
-			for (int j=0; j<8; j++) {
-				if (currentTurn == Player.RED && Character.toLowerCase(board[i][j]) != 'r') {
+		for (int i = 0; i < 8; i++) {
+			for (int j = 0; j < 8; j++) {
+				if (isNotMyPiece(i, j)) {
 					continue;
 				}
-				if (currentTurn == Player.BLACK && Character.toLowerCase(board[i][j]) != 'b') {
-					continue;
-				}
-				if (i < 6 && j < 6 && isEnemyPiece(i+1, j+1) && board[i+2][j+2] == EMPTY && board[i][j] != BLACK_PLAIN) {
-					return true;
-				}
-				if (i > 1 && j > 1 && isEnemyPiece(i-1, j-1) && board[i-2][j-2] == EMPTY && board[i][j] != RED_PLAIN) {
-					return true;
-				}
-				if (i < 6 && j > 1 && isEnemyPiece(i+1, j-1) && board[i+2][j-2] == EMPTY && board[i][j] != BLACK_PLAIN) {
-					return true;
-				}
-				if (i > 1 && j < 6 && isEnemyPiece(i-1, j+1) && board[i-2][j+2] == EMPTY && board[i][j] != RED_PLAIN) {
+				if (isDownRightCapturePossible(i, j)//
+						|| isUpLeftCapturePossible(i, j)//
+						|| isDownLeftCapturePossible(i, j)//
+						|| isUpRightCapturePossible(i, j)) {
 					return true;
 				}
 			}
@@ -140,47 +149,85 @@ public class CheckersBoard {
 		return false;
 	}
 
-	public void doMove(int startRow, int startCol, int endRow, int endCol) {
-		if (Stream.of(startRow, startCol, endRow, endCol).anyMatch(coord -> coord < 0 || coord > 7)) {
-			throw new BadMoveException("All coordinates must be between [0-7]!");
-		}
-		if (currentTurn == Player.BLACK && Character.toLowerCase(board[startRow][startCol]) != 'b') {
-			throw new BadMoveException("You must move YOUR pieces!");
-		}
-		if (currentTurn == Player.RED && Character.toLowerCase(board[startRow][startCol]) != 'r') {
-			throw new BadMoveException("You must move YOUR pieces!");
-		}
-		if (board[endRow][endCol] != EMPTY) {
+	private boolean isUpRightCapturePossible(int i, int j) {
+		return i > 1 && j < 6 && isEnemyPiece(i - 1, j + 1) && board[i - 2][j + 2] == EMPTY && board[i][j] != RED_PLAIN;
+	}
+
+	private boolean isDownLeftCapturePossible(int i, int j) {
+		return i < 6 && j > 1 && isEnemyPiece(i + 1, j - 1) && board[i + 2][j - 2] == EMPTY && board[i][j] != BLACK_PLAIN;
+	}
+
+	private boolean isUpLeftCapturePossible(int i, int j) {
+		return i > 1 && j > 1 && isEnemyPiece(i - 1, j - 1) && board[i - 2][j - 2] == EMPTY && board[i][j] != RED_PLAIN;
+	}
+
+	private boolean isDownRightCapturePossible(int i, int j) {
+		return i < 6 && j < 6 && isEnemyPiece(i + 1, j + 1) && board[i + 2][j + 2] == EMPTY && board[i][j] != BLACK_PLAIN;
+	}
+
+	private boolean isNotMyPiece(int i, int j) {
+		return (currentPlayer == Player.RED && Character.toLowerCase(board[i][j]) != 'r') || (currentPlayer == Player.BLACK
+				&& Character.toLowerCase(board[i][j]) != 'b');
+	}
+
+	private void explodeIfMoveIsInvalid(CheckersMove move) throws BadMoveException {
+		explodeIfMoveIsOutsideOfBoard(move);
+		explodeIfNotMovingOwnPiece(move);
+		explodeIfNotMovingIntoEmptySpace(move);
+		explodeIfNormalPieceMovesBackwards(move);
+	}
+
+	private void explodeIfNotMovingIntoEmptySpace(CheckersMove move) throws BadMoveException {
+		if (board[move.getEndRow()][move.getEndCol()] != EMPTY) {
 			throw new BadMoveException("You can only move into empty spaces!");
 		}
-		if (board[startRow][startCol] == RED_PLAIN && startRow > endRow) {
+	}
+
+	private void explodeIfNormalPieceMovesBackwards(CheckersMove move) throws BadMoveException {
+		if (board[move.getStartRow()][move.getStartCol()] == RED_PLAIN && move.getStartRow() > move.getEndRow()) {
 			throw new BadMoveException("You cannot move/capture backwards!");
 		}
-		if (board[startRow][startCol] == BLACK_PLAIN && startRow < endRow) {
+		if (board[move.getStartRow()][move.getStartCol()] == BLACK_PLAIN && move.getStartRow() < move.getEndRow()) {
 			throw new BadMoveException("You cannot move/capture backwards!");
 		}
-		// normal move
-		if (Math.abs(endRow - startRow) == 1 && Math.abs(endCol-startCol) == 1) {
+	}
+
+	private void explodeIfNotMovingOwnPiece(CheckersMove move) throws BadMoveException {
+		if (currentPlayer == Player.BLACK && Character.toLowerCase(board[move.getStartRow()][move.getStartCol()]) != 'b') {
+			throw new BadMoveException("You must move YOUR pieces!");
+		}
+		if (currentPlayer == Player.RED && Character.toLowerCase(board[move.getStartRow()][move.getStartCol()]) != 'r') {
+			throw new BadMoveException("You must move YOUR pieces!");
+		}
+	}
+
+	private void explodeIfMoveIsOutsideOfBoard(CheckersMove move) throws BadMoveException {
+		if (Stream.of(move.getStartRow(), move.getStartCol(), move.getEndRow(), move.getEndCol()).anyMatch(coord -> coord < 0 || coord > 7)) {
+			throw new BadMoveException("All coordinates must be between [0-7]!");
+		}
+	}
+
+	private void explodeIfNotCapturingEnemyPiece(CheckersMove capture) throws BadMoveException {
+		CheckersMove.Position midPoint = capture.getMiddlePosition();
+		int middleRow = midPoint.getRow();
+		int middleCol = midPoint.getCol();
+		if (!isEnemyPiece(middleRow, middleCol)) {
+			throw new BadMoveException("You can only capture your opponent's pieces!");
+		}
+	}
+
+	public void processMove(CheckersMove move) throws BadMoveException {
+		explodeIfMoveIsInvalid(move);
+
+		if (isNormalMove(move)) {
 			if (isCapturePossible()) {
 				throw new BadMoveException("A capture is possible, so you cannot move!");
 			}
-			board[endRow][endCol] = board[startRow][startCol];
-			board[startRow][startCol] = EMPTY;
+			performMove(move);
 			switchTurn();
-		} else if (Math.abs(endRow - startRow) == 2 && Math.abs(endCol-startCol) == 2) {
-			// capture
-			int middleRow = (startRow + endRow) / 2;
-			int middleCol = (startCol + endCol) / 2;
-			if (currentTurn == Player.RED && Character.toLowerCase(board[middleRow][middleCol]) != 'b') {
-				throw new BadMoveException("You can only capture your opponent's pieces!");
-			}
-			if (currentTurn == Player.BLACK && Character.toLowerCase(board[middleRow][middleCol]) != 'r') {
-				throw new BadMoveException("You can only capture your opponent's pieces!");
-			}
-			board[endRow][endCol] = board[startRow][startCol];
-			board[middleRow][middleCol] = EMPTY;
-			board[startRow][startCol] = EMPTY;
-
+		} else if (isCaptureMove(move)) {
+			explodeIfNotCapturingEnemyPiece(move);
+			performCapture(move);
 			if (!isCapturePossible()) {
 				switchTurn();
 			}
@@ -191,8 +238,28 @@ public class CheckersBoard {
 		crownPiecesOnBoard();
 	}
 
+	private void performMove(CheckersMove move) {
+		board[move.getEndRow()][move.getEndCol()] = board[move.getStartRow()][move.getStartCol()];
+		board[move.getStartRow()][move.getStartCol()] = EMPTY;
+	}
+
+	private void performCapture(CheckersMove capture) {
+		CheckersMove.Position midPoint = capture.getMiddlePosition();
+		board[capture.getEndRow()][capture.getEndCol()] = board[capture.getStartRow()][capture.getStartCol()];
+		board[midPoint.getRow()][midPoint.getCol()] = EMPTY;
+		board[capture.getStartRow()][capture.getStartCol()] = EMPTY;
+	}
+
+	private boolean isCaptureMove(CheckersMove move) {
+		return Math.abs(move.getEndRow() - move.getStartRow()) == 2 && Math.abs(move.getEndCol() - move.getStartCol()) == 2;
+	}
+
+	private boolean isNormalMove(CheckersMove move) {
+		return Math.abs(move.getEndRow() - move.getStartRow()) == 1 && Math.abs(move.getEndCol() - move.getStartCol()) == 1;
+	}
+
 	public void crownPiecesOnBoard() {
-		for (int j=0;j<8;j++) {
+		for (int j = 0; j < 8; j++) {
 			if (board[7][j] == RED_PLAIN) {
 				board[7][j] = RED_CROWNED;
 			}
@@ -205,48 +272,63 @@ public class CheckersBoard {
 	public void play() {
 		do {
 			// check if I lost
-			int numMyPieces = countPiecesOfPlayer(currentTurn);
+			int numMyPieces = countPiecesOfPlayer(currentPlayer);
 			if (numMyPieces == 0) {
-				System.out.println("Player " + currentTurn + " lost!");
+				System.out.println("Player " + currentPlayer + " lost!");
 				break;
 			}
 			// check if I can move
 			if (!isMovePossible() && !isCapturePossible()) {
-				switchTurn();
-				if (!isMovePossible() && !isCapturePossible()) {
+				if (enemyCannotMove()) {
 					System.out.println("There is a tie!");
 					break;
 				}
-				switchTurn();
-
-				System.out.println("Player " + currentTurn + " lost!");
+				System.out.println("Player " + currentPlayer + " lost!");
 				break;
 			}
-
 			printBoard();
-			Scanner scanner = new Scanner(System.in);
-			System.out.println("Move the piece from:");
-			System.out.print("Row: ");
-			int startRow = scanner.nextInt();
-			System.out.print("Column: ");
-			int startCol = scanner.nextInt();
-			System.out.println("to:");
-			System.out.print("Row: ");
-			int endRow = scanner.nextInt();
-			System.out.print("Column: ");
-			int endCol = scanner.nextInt();
-
+			CheckersMove moveFromKeyboard = readMoveFromKeyboard();
 			try {
-				doMove(startRow, startCol, endRow, endCol);
+				processMove(moveFromKeyboard);
 			} catch (BadMoveException ex) {
 				System.err.println(ex.getMessage());
 			}
 
 		} while (true);
 	}
-	// TODO: revisar el empate
+
+	private boolean enemyCannotMove() {
+		// quickly switch over to the other player
+		// to check their possible moves/captures
+		switchTurn();
+		boolean enemyCannotMove = false;
+		if (!isMovePossible() && !isCapturePossible()) {
+			enemyCannotMove = true;
+		}
+		// switch the turn back to the real "current player"
+		switchTurn();
+		return enemyCannotMove;
+	}
+
+	public CheckersMove readMoveFromKeyboard() {
+		Scanner scanner = new Scanner(System.in);
+		System.out.println("Move the piece from:");
+		System.out.print("Row: ");
+		int startRow = scanner.nextInt();
+		System.out.print("Column: ");
+		int startCol = scanner.nextInt();
+		System.out.println("to:");
+		System.out.print("Row: ");
+		int endRow = scanner.nextInt();
+		System.out.print("Column: ");
+		int endCol = scanner.nextInt();
+		return CheckersMove.builder()
+				.fromPosition(startRow, startCol)
+				.toPosition(endRow, endCol)
+				.build();
+	}
 
 	public void switchTurn() {
-		currentTurn = otherPlayer();
+		currentPlayer = otherPlayer();
 	}
 }
