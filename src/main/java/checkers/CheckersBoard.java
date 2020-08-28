@@ -2,11 +2,10 @@ package checkers;
 
 import checkers.exception.BadMoveException;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Scanner;
-import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 
 public class CheckersBoard {
@@ -22,6 +21,10 @@ public class CheckersBoard {
 
 	public CheckersBoard() {
 		board = new char[8][8];
+	}
+
+	public char[][] getBoard() {
+		return board;
 	}
 
 	public enum Player {
@@ -123,6 +126,30 @@ public class CheckersBoard {
 		return false;
 	}
 
+	public List<CheckersMove> possibleMoves() {
+		List<CheckersMove> possibleMoves = new ArrayList<>();
+		for (int i = 0; i < 8; i++) {
+			for (int j = 0; j < 8; j++) {
+				if (isNotMyPiece(i, j)) {
+					continue;
+				}
+				if (isDownRightMovePossible(i, j)) {
+					possibleMoves.add(CheckersMove.builder().fromPosition(i,j).toPosition(i+1, j+1).build());
+				}
+				if (isUpLeftMovePossible(i, j)) {
+					possibleMoves.add(CheckersMove.builder().fromPosition(i,j).toPosition(i-1, j-1).build());
+				}
+				if (isDownLeftMovePossible(i, j)) {
+					possibleMoves.add(CheckersMove.builder().fromPosition(i,j).toPosition(i+1, j-1).build());
+				}
+				if (isUpRightMovePossible(i, j)) {
+					possibleMoves.add(CheckersMove.builder().fromPosition(i,j).toPosition(i-1, j+1).build());
+				}
+			}
+		}
+		return possibleMoves;
+	}
+
 	private boolean isUpRightMovePossible(int i, int j) {
 		return i > 0 && j < 7 && board[i - 1][j + 1] == EMPTY
 				// we exclude the non-crowned piece that cannot move in this direction
@@ -145,6 +172,30 @@ public class CheckersBoard {
 		return i < 7 && j < 7 && board[i + 1][j + 1] == EMPTY
 				// we exclude the non-crowned piece that cannot move in this direction
 				&& board[i][j] != BLACK_PLAIN;
+	}
+
+	public List<CheckersMove> possibleCaptures() {
+		List<CheckersMove> captures = new ArrayList<>();
+		for (int i = 0; i < 8; i++) {
+			for (int j = 0; j < 8; j++) {
+				if (isNotMyPiece(i, j)) {
+					continue;
+				}
+				if (isDownRightCapturePossible(i, j)) {
+					captures.add(CheckersMove.builder().fromPosition(i,j).toPosition(i+2, j+2).build());
+				}
+				if (isUpLeftCapturePossible(i, j)) {
+					captures.add(CheckersMove.builder().fromPosition(i,j).toPosition(i-2, j-2).build());
+				}
+				if (isDownLeftCapturePossible(i, j)) {
+					captures.add(CheckersMove.builder().fromPosition(i,j).toPosition(i+2, j-2).build());
+				}
+				if (isUpRightCapturePossible(i, j)) {
+					captures.add(CheckersMove.builder().fromPosition(i,j).toPosition(i-2, j+2).build());
+				}
+			}
+		}
+		return captures;
 	}
 
 	public boolean isCapturePossible() {
