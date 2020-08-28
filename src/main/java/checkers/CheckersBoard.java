@@ -2,7 +2,11 @@ package checkers;
 
 import checkers.exception.BadMoveException;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Scanner;
+import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 
 public class CheckersBoard {
@@ -29,6 +33,17 @@ public class CheckersBoard {
 			return Player.RED;
 		}
 		return Player.BLACK;
+	}
+
+	public CheckersBoard clone() {
+		CheckersBoard clone = new CheckersBoard();
+		for (int i=0;i<8;i++) {
+			for (int j=0;j<8;j++) {
+				clone.board[i][j] = this.board[i][j];
+			}
+		}
+		clone.currentPlayer = this.currentPlayer;
+		return clone;
 	}
 
 	public static CheckersBoard initBoard() {
@@ -269,31 +284,50 @@ public class CheckersBoard {
 		}
 	}
 
-	public void play() {
+	/**
+	 * Executes a Checkers and returns the loser.
+	 * @param player1 A Checkers-playing agent.
+	 * @param player2 A Checkers-playing agent.
+	 * @return The loser, or {@code Optional.empty()} if there is a tie.
+	 */
+	public Optional<CheckersPlayer> play(CheckersPlayer player1, CheckersPlayer player2) {
+		Map<Player, CheckersPlayer> playerMap = Map.of(//
+				Player.BLACK, player1,//
+				Player.RED, player2
+		);
+		Runnable displayLossMessage = () -> {
+			System.out.println("Player " + currentPlayer + "/" + playerMap.get(currentPlayer).getClass().getName()+" lost!");
+		};
 		do {
+			CheckersPlayer playerAgent = playerMap.get(currentPlayer);
 			// check if I lost
 			int numMyPieces = countPiecesOfPlayer(currentPlayer);
 			if (numMyPieces == 0) {
-				System.out.println("Player " + currentPlayer + " lost!");
-				break;
+				displayLossMessage.run();
+				return Optional.of(playerAgent);
 			}
 			// check if I can move
 			if (!isMovePossible() && !isCapturePossible()) {
 				if (enemyCannotMove()) {
 					System.out.println("There is a tie!");
-					break;
+					return Optional.empty();
 				}
-				System.out.println("Player " + currentPlayer + " lost!");
-				break;
+				displayLossMessage.run();
+				return Optional.of(playerAgent);
 			}
 			printBoard();
-			CheckersMove moveFromKeyboard = readMoveFromKeyboard();
+			CheckersMove moveFromPlayer = playerAgent.play(this.clone());
 			try {
-				processMove(moveFromKeyboard);
+				processMove(moveFromPlayer);
 			} catch (BadMoveException ex) {
-				System.err.println(ex.getMessage());
+				if (playerAgent instanceof KeyboardPlayer) {
+					System.err.println(ex.getMessage());
+				} else {
+					System.err.println("Invalid move!! This agent has now lost!");
+					displayLossMessage.run();
+					return Optional.of(playerAgent);
+				}
 			}
-
 		} while (true);
 	}
 
@@ -308,24 +342,6 @@ public class CheckersBoard {
 		// switch the turn back to the real "current player"
 		switchTurn();
 		return enemyCannotMove;
-	}
-
-	public CheckersMove readMoveFromKeyboard() {
-		Scanner scanner = new Scanner(System.in);
-		System.out.println("Move the piece from:");
-		System.out.print("Row: ");
-		int startRow = scanner.nextInt();
-		System.out.print("Column: ");
-		int startCol = scanner.nextInt();
-		System.out.println("to:");
-		System.out.print("Row: ");
-		int endRow = scanner.nextInt();
-		System.out.print("Column: ");
-		int endCol = scanner.nextInt();
-		return CheckersMove.builder()
-				.fromPosition(startRow, startCol)
-				.toPosition(endRow, endCol)
-				.build();
 	}
 
 	public void switchTurn() {

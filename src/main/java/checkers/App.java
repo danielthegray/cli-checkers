@@ -3,10 +3,16 @@
  */
 package checkers;
 
+import java.util.Optional;
+
 public class App {
 
     public static void main(String[] args) {
         CheckersBoard game = CheckersBoard.initBoard();
-        game.play();
+        CheckersPlayer player1 = new KeyboardPlayer();
+        CheckersPlayer player2 = new KeyboardPlayer();
+        Optional<CheckersPlayer> loser = game.play(player1, player2);
+        loser.ifPresent(//
+                checkersPlayer -> System.out.println("VICTORY! " + checkersPlayer.getClass().getName()));
     }
 }
