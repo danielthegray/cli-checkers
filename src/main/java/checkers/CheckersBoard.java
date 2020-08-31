@@ -435,6 +435,7 @@ public class CheckersBoard {
 		Runnable displayLossMessage = () -> {
 			System.out.println("Player " + currentPlayer + "/" + playerMap.get(currentPlayer).getClass().getName()+" lost!");
 		};
+		int numberOfMovesSinceLastCapture = 0;
 		do {
 			CheckersPlayer playerAgent = playerMap.get(currentPlayer);
 			// check if I lost
@@ -464,6 +465,15 @@ public class CheckersBoard {
 					displayLossMessage.run();
 					return Optional.of(playerAgent);
 				}
+			}
+			if (isNormalMove(moveFromPlayer)) {
+				numberOfMovesSinceLastCapture++;
+			} else {
+				numberOfMovesSinceLastCapture = 0;
+			}
+			if (numberOfMovesSinceLastCapture > 25) {
+				System.out.println("DRAW!");
+				return Optional.empty();
 			}
 		} while (true);
 	}
