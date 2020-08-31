@@ -22,8 +22,13 @@ public class CheckersBoard {
 	private char[][] board;
 	private Player currentPlayer;
 
+	private boolean captureLock;
+	private int captureStartRow;
+	private int captureStartCol;
+
 	protected CheckersBoard() {
 		board = new char[8][8];
+		captureLock = false;
 	}
 
 	public char[][] getBoard() {
@@ -55,6 +60,9 @@ public class CheckersBoard {
 			System.arraycopy(this.board[i], 0, clone.board[i],0, this.board[i].length);
 		}
 		clone.currentPlayer = this.currentPlayer;
+		clone.captureLock = this.captureLock;
+		clone.captureStartCol = this.captureStartCol;
+		clone.captureStartRow = this.captureStartRow;
 		return clone;
 	}
 
@@ -133,6 +141,7 @@ public class CheckersBoard {
 	private boolean isEnemyPiece(int i, int j) {
 		return isEnemyPiece(currentPlayer, i, j);
 	}
+
 	private boolean isEnemyPiece(Player player, int i, int j) {
 		return (player == Player.BLACK && Character.toLowerCase(board[i][j]) == 'r')//
 				|| (player == Player.RED && Character.toLowerCase(board[i][j]) == 'b');
@@ -141,6 +150,7 @@ public class CheckersBoard {
 	public boolean isMovePossible() {
 		return isMovePossible(currentPlayer);
 	}
+
 	public boolean isMovePossible(Player player) {
 		for (int i = 0; i < 8; i++) {
 			for (int j = 0; j < 8; j++) {
@@ -224,6 +234,9 @@ public class CheckersBoard {
 				if (ownerOfPosition.isEmpty() || ownerOfPosition.get() != player) {
 					continue;
 				}
+				if (captureLock && (i != captureStartRow || j != captureStartCol)) {
+					continue;
+				}
 				if (isDownRightCapturePossible(player, i, j)) {
 					captures.add(CheckersMove.builder().fromPosition(i,j).toPosition(i+2, j+2).build());
 				}
@@ -251,15 +264,19 @@ public class CheckersBoard {
 				if (isNotMyPiece(i, j)) {
 					continue;
 				}
-				if (isDownRightCapturePossible(player, i, j)//
-						|| isUpLeftCapturePossible(player, i, j)//
-						|| isDownLeftCapturePossible(player, i, j)//
-						|| isUpRightCapturePossible(player, i, j)) {
+				if (isCapturePossibleAtPosition(player, i, j)) {
 					return true;
 				}
 			}
 		}
 		return false;
+	}
+
+	private boolean isCapturePossibleAtPosition(Player player, int i, int j) {
+		return isDownRightCapturePossible(player, i, j)//
+				|| isUpLeftCapturePossible(player, i, j)//
+				|| isDownLeftCapturePossible(player, i, j)//
+				|| isUpRightCapturePossible(player, i, j);
 	}
 
 	private boolean isUpRightCapturePossible(Player player, int i, int j) {
@@ -341,17 +358,30 @@ public class CheckersBoard {
 	public void processMove(CheckersMove move) throws BadMoveException {
 		explodeIfMoveIsInvalid(move);
 
+		if (captureLock && (move.getStartCol() != captureStartCol || move.getStartRow() != captureStartRow)) {
+			throw new BadMoveException("You must play the chained capture!");
+		}
+
 		if (isNormalMove(move)) {
+			if (captureLock) {
+				throw new BadMoveException("You must play the chained capture!");
+			}
 			if (isCapturePossible(currentPlayer)) {
 				throw new BadMoveException("A capture is possible, so you cannot move!");
 			}
+			captureLock = false;
 			performMove(move);
 			switchTurn();
 		} else if (isCaptureMove(move)) {
 			explodeIfNotCapturingEnemyPiece(move);
 			performCapture(move);
-			if (!isCapturePossible()) {
+			if (isCapturePossibleAtPosition(currentPlayer, move.getEndRow(), move.getEndCol())) {
+				captureLock = true;
+				captureStartCol = move.getEndCol();
+				captureStartRow = move.getEndRow();
+			} else {
 				switchTurn();
+				captureLock = false;
 			}
 		} else {
 			throw new BadMoveException("You can only move 1 space away, or capture 2 spaces away!");
