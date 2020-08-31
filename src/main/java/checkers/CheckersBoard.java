@@ -3,9 +3,12 @@ package checkers;
 import checkers.exception.BadMoveException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class CheckersBoard {
@@ -19,7 +22,7 @@ public class CheckersBoard {
 	private char[][] board;
 	private Player currentPlayer;
 
-	public CheckersBoard() {
+	private CheckersBoard() {
 		board = new char[8][8];
 	}
 
@@ -31,22 +34,41 @@ public class CheckersBoard {
 		RED, BLACK;
 	}
 
-	public Player otherPlayer() {
-		if (currentPlayer == Player.BLACK) {
+	public Player otherPlayer(Player player) {
+		if (player == Player.BLACK) {
 			return Player.RED;
 		}
 		return Player.BLACK;
 	}
 
+	public Player otherPlayer() {
+		return otherPlayer(currentPlayer);
+	}
+
 	public CheckersBoard clone() {
 		CheckersBoard clone = new CheckersBoard();
 		for (int i=0;i<8;i++) {
-			for (int j=0;j<8;j++) {
-				clone.board[i][j] = this.board[i][j];
-			}
+			System.arraycopy(this.board[i], 0, clone.board[i],0, this.board[i].length);
 		}
 		clone.currentPlayer = this.currentPlayer;
 		return clone;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+		CheckersBoard that = (CheckersBoard) o;
+		return IntStream.range(0, board.length).allMatch(i -> Arrays.equals(board[i], that.board[i])) && currentPlayer == that.currentPlayer;
+	}
+
+	@Override
+	public int hashCode() {
+		int result = Objects.hash(currentPlayer);
+		result = 31 * result + Arrays.hashCode(board);
+		return result;
 	}
 
 	public static CheckersBoard initBoard() {
@@ -105,14 +127,21 @@ public class CheckersBoard {
 	}
 
 	private boolean isEnemyPiece(int i, int j) {
-		return (currentPlayer == Player.BLACK && Character.toLowerCase(board[i][j]) == 'r')//
-				|| (currentPlayer == Player.RED && Character.toLowerCase(board[i][j]) == 'b');
+		return isEnemyPiece(currentPlayer, i, j);
+	}
+	private boolean isEnemyPiece(Player player, int i, int j) {
+		return (player == Player.BLACK && Character.toLowerCase(board[i][j]) == 'r')//
+				|| (player == Player.RED && Character.toLowerCase(board[i][j]) == 'b');
 	}
 
 	public boolean isMovePossible() {
+		return isMovePossible(currentPlayer);
+	}
+	public boolean isMovePossible(Player player) {
 		for (int i = 0; i < 8; i++) {
 			for (int j = 0; j < 8; j++) {
-				if (isNotMyPiece(i, j)) {
+				Optional<Player> ownerOfPosition = ownerOf(i,j);
+				if (ownerOfPosition.isEmpty() || ownerOfPosition.get() != player) {
 					continue;
 				}
 				if (isDownRightMovePossible(i, j)//
@@ -126,11 +155,12 @@ public class CheckersBoard {
 		return false;
 	}
 
-	public List<CheckersMove> possibleMoves() {
+	public List<CheckersMove> possibleMoves(Player player) {
 		List<CheckersMove> possibleMoves = new ArrayList<>();
 		for (int i = 0; i < 8; i++) {
 			for (int j = 0; j < 8; j++) {
-				if (isNotMyPiece(i, j)) {
+				Optional<Player> ownerOfPosition = ownerOf(i,j);
+				if (ownerOfPosition.isEmpty() || ownerOfPosition.get() != player) {
 					continue;
 				}
 				if (isDownRightMovePossible(i, j)) {
@@ -148,6 +178,10 @@ public class CheckersBoard {
 			}
 		}
 		return possibleMoves;
+	}
+
+	public List<CheckersMove> possibleMoves() {
+		return possibleMoves(currentPlayer);
 	}
 
 	private boolean isUpRightMovePossible(int i, int j) {
@@ -175,22 +209,27 @@ public class CheckersBoard {
 	}
 
 	public List<CheckersMove> possibleCaptures() {
+		return possibleCaptures(currentPlayer);
+	}
+
+	public List<CheckersMove> possibleCaptures(Player player) {
 		List<CheckersMove> captures = new ArrayList<>();
 		for (int i = 0; i < 8; i++) {
 			for (int j = 0; j < 8; j++) {
-				if (isNotMyPiece(i, j)) {
+				Optional<Player> ownerOfPosition = ownerOf(i,j);
+				if (ownerOfPosition.isEmpty() || ownerOfPosition.get() != player) {
 					continue;
 				}
-				if (isDownRightCapturePossible(i, j)) {
+				if (isDownRightCapturePossible(player, i, j)) {
 					captures.add(CheckersMove.builder().fromPosition(i,j).toPosition(i+2, j+2).build());
 				}
-				if (isUpLeftCapturePossible(i, j)) {
+				if (isUpLeftCapturePossible(player, i, j)) {
 					captures.add(CheckersMove.builder().fromPosition(i,j).toPosition(i-2, j-2).build());
 				}
-				if (isDownLeftCapturePossible(i, j)) {
+				if (isDownLeftCapturePossible(player, i, j)) {
 					captures.add(CheckersMove.builder().fromPosition(i,j).toPosition(i+2, j-2).build());
 				}
-				if (isUpRightCapturePossible(i, j)) {
+				if (isUpRightCapturePossible(player, i, j)) {
 					captures.add(CheckersMove.builder().fromPosition(i,j).toPosition(i-2, j+2).build());
 				}
 			}
@@ -199,15 +238,19 @@ public class CheckersBoard {
 	}
 
 	public boolean isCapturePossible() {
+		return isCapturePossible(currentPlayer);
+	}
+
+	public boolean isCapturePossible(Player player) {
 		for (int i = 0; i < 8; i++) {
 			for (int j = 0; j < 8; j++) {
 				if (isNotMyPiece(i, j)) {
 					continue;
 				}
-				if (isDownRightCapturePossible(i, j)//
-						|| isUpLeftCapturePossible(i, j)//
-						|| isDownLeftCapturePossible(i, j)//
-						|| isUpRightCapturePossible(i, j)) {
+				if (isDownRightCapturePossible(player, i, j)//
+						|| isUpLeftCapturePossible(player, i, j)//
+						|| isDownLeftCapturePossible(player, i, j)//
+						|| isUpRightCapturePossible(player, i, j)) {
 					return true;
 				}
 			}
@@ -215,25 +258,34 @@ public class CheckersBoard {
 		return false;
 	}
 
-	private boolean isUpRightCapturePossible(int i, int j) {
-		return i > 1 && j < 6 && isEnemyPiece(i - 1, j + 1) && board[i - 2][j + 2] == EMPTY && board[i][j] != RED_PLAIN;
+	private boolean isUpRightCapturePossible(Player player, int i, int j) {
+		return i > 1 && j < 6 && isEnemyPiece(player, i - 1, j + 1) && board[i - 2][j + 2] == EMPTY && board[i][j] != RED_PLAIN;
 	}
 
-	private boolean isDownLeftCapturePossible(int i, int j) {
-		return i < 6 && j > 1 && isEnemyPiece(i + 1, j - 1) && board[i + 2][j - 2] == EMPTY && board[i][j] != BLACK_PLAIN;
+	private boolean isDownLeftCapturePossible(Player player, int i, int j) {
+		return i < 6 && j > 1 && isEnemyPiece(player, i + 1, j - 1) && board[i + 2][j - 2] == EMPTY && board[i][j] != BLACK_PLAIN;
 	}
 
-	private boolean isUpLeftCapturePossible(int i, int j) {
-		return i > 1 && j > 1 && isEnemyPiece(i - 1, j - 1) && board[i - 2][j - 2] == EMPTY && board[i][j] != RED_PLAIN;
+	private boolean isUpLeftCapturePossible(Player player, int i, int j) {
+		return i > 1 && j > 1 && isEnemyPiece(player, i - 1, j - 1) && board[i - 2][j - 2] == EMPTY && board[i][j] != RED_PLAIN;
 	}
 
-	private boolean isDownRightCapturePossible(int i, int j) {
-		return i < 6 && j < 6 && isEnemyPiece(i + 1, j + 1) && board[i + 2][j + 2] == EMPTY && board[i][j] != BLACK_PLAIN;
+	private boolean isDownRightCapturePossible(Player player, int i, int j) {
+		return i < 6 && j < 6 && isEnemyPiece(player, i + 1, j + 1) && board[i + 2][j + 2] == EMPTY && board[i][j] != BLACK_PLAIN;
 	}
 
 	private boolean isNotMyPiece(int i, int j) {
-		return (currentPlayer == Player.RED && Character.toLowerCase(board[i][j]) != 'r') || (currentPlayer == Player.BLACK
-				&& Character.toLowerCase(board[i][j]) != 'b');
+		return ownerOf(i, j).map(owner -> owner != currentPlayer).orElse(true);
+	}
+
+	private Optional<Player> ownerOf(int i, int j) {
+		if (board[i][j] == RED_CROWNED || board[i][j] == RED_PLAIN) {
+			return Optional.of(Player.RED);
+		}
+		if (board[i][j] == BLACK_CROWNED || board[i][j] == BLACK_PLAIN) {
+			return Optional.of(Player.BLACK);
+		}
+		return Optional.empty();
 	}
 
 	private void explodeIfMoveIsInvalid(CheckersMove move) throws BadMoveException {
@@ -286,7 +338,7 @@ public class CheckersBoard {
 		explodeIfMoveIsInvalid(move);
 
 		if (isNormalMove(move)) {
-			if (isCapturePossible()) {
+			if (isCapturePossible(currentPlayer)) {
 				throw new BadMoveException("A capture is possible, so you cannot move!");
 			}
 			performMove(move);
@@ -385,14 +437,8 @@ public class CheckersBoard {
 	private boolean enemyCannotMove() {
 		// quickly switch over to the other player
 		// to check their possible moves/captures
-		switchTurn();
-		boolean enemyCannotMove = false;
-		if (!isMovePossible() && !isCapturePossible()) {
-			enemyCannotMove = true;
-		}
-		// switch the turn back to the real "current player"
-		switchTurn();
-		return enemyCannotMove;
+		Player otherPlayer = otherPlayer(currentPlayer);
+		return !isMovePossible(otherPlayer) && !isCapturePossible(otherPlayer);
 	}
 
 	public void switchTurn() {
