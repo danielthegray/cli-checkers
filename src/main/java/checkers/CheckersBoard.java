@@ -22,7 +22,7 @@ public class CheckersBoard {
 	private char[][] board;
 	private Player currentPlayer;
 
-	private CheckersBoard() {
+	protected CheckersBoard() {
 		board = new char[8][8];
 	}
 
