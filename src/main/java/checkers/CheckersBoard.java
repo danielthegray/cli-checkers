@@ -54,6 +54,18 @@ public class CheckersBoard {
 		return currentPlayer;
 	}
 
+	public boolean isCaptureLock() {
+		return captureLock;
+	}
+
+	public int getCaptureStartRow() {
+		return captureStartRow;
+	}
+
+	public int getCaptureStartCol() {
+		return captureStartCol;
+	}
+
 	public CheckersBoard clone() {
 		CheckersBoard clone = new CheckersBoard();
 		for (int i=0;i<8;i++) {
@@ -198,25 +210,25 @@ public class CheckersBoard {
 		return possibleMoves(currentPlayer);
 	}
 
-	protected boolean isUpRightMovePossible(int i, int j) {
+	public boolean isUpRightMovePossible(int i, int j) {
 		return i > 0 && j < 7 && board[i - 1][j + 1] == EMPTY
 				// we exclude the non-crowned piece that cannot move in this direction
 				&& board[i][j] != RED_PLAIN;
 	}
 
-	protected boolean isDownLeftMovePossible(int i, int j) {
+	public boolean isDownLeftMovePossible(int i, int j) {
 		return i < 7 && j > 0 && board[i + 1][j - 1] == EMPTY
 				// we exclude the non-crowned piece that cannot move in this direction
 				&& board[i][j] != BLACK_PLAIN;
 	}
 
-	protected boolean isUpLeftMovePossible(int i, int j) {
+	public boolean isUpLeftMovePossible(int i, int j) {
 		return i > 0 && j > 0 && board[i - 1][j - 1] == EMPTY
 				// we exclude the non-crowned piece that cannot move in this direction
 				&& board[i][j] != RED_PLAIN;
 	}
 
-	protected boolean isDownRightMovePossible(int i, int j) {
+	public boolean isDownRightMovePossible(int i, int j) {
 		return i < 7 && j < 7 && board[i + 1][j + 1] == EMPTY
 				// we exclude the non-crowned piece that cannot move in this direction
 				&& board[i][j] != BLACK_PLAIN;
@@ -272,34 +284,34 @@ public class CheckersBoard {
 		return false;
 	}
 
-	protected boolean isCapturePossibleAtPosition(Player player, int i, int j) {
+	public boolean isCapturePossibleAtPosition(Player player, int i, int j) {
 		return isDownRightCapturePossible(player, i, j)//
 				|| isUpLeftCapturePossible(player, i, j)//
 				|| isDownLeftCapturePossible(player, i, j)//
 				|| isUpRightCapturePossible(player, i, j);
 	}
 
-	protected boolean isUpRightCapturePossible(Player player, int i, int j) {
+	public boolean isUpRightCapturePossible(Player player, int i, int j) {
 		return i > 1 && j < 6 && isEnemyPiece(player, i - 1, j + 1) && board[i - 2][j + 2] == EMPTY && board[i][j] != RED_PLAIN;
 	}
 
-	protected boolean isDownLeftCapturePossible(Player player, int i, int j) {
+	public boolean isDownLeftCapturePossible(Player player, int i, int j) {
 		return i < 6 && j > 1 && isEnemyPiece(player, i + 1, j - 1) && board[i + 2][j - 2] == EMPTY && board[i][j] != BLACK_PLAIN;
 	}
 
-	protected boolean isUpLeftCapturePossible(Player player, int i, int j) {
+	public boolean isUpLeftCapturePossible(Player player, int i, int j) {
 		return i > 1 && j > 1 && isEnemyPiece(player, i - 1, j - 1) && board[i - 2][j - 2] == EMPTY && board[i][j] != RED_PLAIN;
 	}
 
-	protected boolean isDownRightCapturePossible(Player player, int i, int j) {
+	public boolean isDownRightCapturePossible(Player player, int i, int j) {
 		return i < 6 && j < 6 && isEnemyPiece(player, i + 1, j + 1) && board[i + 2][j + 2] == EMPTY && board[i][j] != BLACK_PLAIN;
 	}
 
-	protected boolean isNotMyPiece(int i, int j) {
+	public boolean isNotMyPiece(int i, int j) {
 		return ownerOf(i, j).map(owner -> owner != currentPlayer).orElse(true);
 	}
 
-	protected Optional<Player> ownerOf(int i, int j) {
+	public Optional<Player> ownerOf(int i, int j) {
 		if (board[i][j] == RED_CROWNED || board[i][j] == RED_PLAIN) {
 			return Optional.of(Player.RED);
 		}
