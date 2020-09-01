@@ -19,12 +19,12 @@ public class CheckersBoard {
 	public static final char INVALID = '*';
 	public static final char EMPTY = ' ';
 
-	private char[][] board;
-	private Player currentPlayer;
+	protected char[][] board;
+	protected Player currentPlayer;
 
-	private boolean captureLock;
-	private int captureStartRow;
-	private int captureStartCol;
+	protected boolean captureLock;
+	protected int captureStartRow;
+	protected int captureStartCol;
 
 	protected CheckersBoard() {
 		board = new char[8][8];
@@ -198,25 +198,25 @@ public class CheckersBoard {
 		return possibleMoves(currentPlayer);
 	}
 
-	private boolean isUpRightMovePossible(int i, int j) {
+	protected boolean isUpRightMovePossible(int i, int j) {
 		return i > 0 && j < 7 && board[i - 1][j + 1] == EMPTY
 				// we exclude the non-crowned piece that cannot move in this direction
 				&& board[i][j] != RED_PLAIN;
 	}
 
-	private boolean isDownLeftMovePossible(int i, int j) {
+	protected boolean isDownLeftMovePossible(int i, int j) {
 		return i < 7 && j > 0 && board[i + 1][j - 1] == EMPTY
 				// we exclude the non-crowned piece that cannot move in this direction
 				&& board[i][j] != BLACK_PLAIN;
 	}
 
-	private boolean isUpLeftMovePossible(int i, int j) {
+	protected boolean isUpLeftMovePossible(int i, int j) {
 		return i > 0 && j > 0 && board[i - 1][j - 1] == EMPTY
 				// we exclude the non-crowned piece that cannot move in this direction
 				&& board[i][j] != RED_PLAIN;
 	}
 
-	private boolean isDownRightMovePossible(int i, int j) {
+	protected boolean isDownRightMovePossible(int i, int j) {
 		return i < 7 && j < 7 && board[i + 1][j + 1] == EMPTY
 				// we exclude the non-crowned piece that cannot move in this direction
 				&& board[i][j] != BLACK_PLAIN;
@@ -272,34 +272,34 @@ public class CheckersBoard {
 		return false;
 	}
 
-	private boolean isCapturePossibleAtPosition(Player player, int i, int j) {
+	protected boolean isCapturePossibleAtPosition(Player player, int i, int j) {
 		return isDownRightCapturePossible(player, i, j)//
 				|| isUpLeftCapturePossible(player, i, j)//
 				|| isDownLeftCapturePossible(player, i, j)//
 				|| isUpRightCapturePossible(player, i, j);
 	}
 
-	private boolean isUpRightCapturePossible(Player player, int i, int j) {
+	protected boolean isUpRightCapturePossible(Player player, int i, int j) {
 		return i > 1 && j < 6 && isEnemyPiece(player, i - 1, j + 1) && board[i - 2][j + 2] == EMPTY && board[i][j] != RED_PLAIN;
 	}
 
-	private boolean isDownLeftCapturePossible(Player player, int i, int j) {
+	protected boolean isDownLeftCapturePossible(Player player, int i, int j) {
 		return i < 6 && j > 1 && isEnemyPiece(player, i + 1, j - 1) && board[i + 2][j - 2] == EMPTY && board[i][j] != BLACK_PLAIN;
 	}
 
-	private boolean isUpLeftCapturePossible(Player player, int i, int j) {
+	protected boolean isUpLeftCapturePossible(Player player, int i, int j) {
 		return i > 1 && j > 1 && isEnemyPiece(player, i - 1, j - 1) && board[i - 2][j - 2] == EMPTY && board[i][j] != RED_PLAIN;
 	}
 
-	private boolean isDownRightCapturePossible(Player player, int i, int j) {
+	protected boolean isDownRightCapturePossible(Player player, int i, int j) {
 		return i < 6 && j < 6 && isEnemyPiece(player, i + 1, j + 1) && board[i + 2][j + 2] == EMPTY && board[i][j] != BLACK_PLAIN;
 	}
 
-	private boolean isNotMyPiece(int i, int j) {
+	protected boolean isNotMyPiece(int i, int j) {
 		return ownerOf(i, j).map(owner -> owner != currentPlayer).orElse(true);
 	}
 
-	private Optional<Player> ownerOf(int i, int j) {
+	protected Optional<Player> ownerOf(int i, int j) {
 		if (board[i][j] == RED_CROWNED || board[i][j] == RED_PLAIN) {
 			return Optional.of(Player.RED);
 		}
@@ -309,20 +309,20 @@ public class CheckersBoard {
 		return Optional.empty();
 	}
 
-	private void explodeIfMoveIsInvalid(CheckersMove move) throws BadMoveException {
+	protected void explodeIfMoveIsInvalid(CheckersMove move) throws BadMoveException {
 		explodeIfMoveIsOutsideOfBoard(move);
 		explodeIfNotMovingOwnPiece(move);
 		explodeIfNotMovingIntoEmptySpace(move);
 		explodeIfNormalPieceMovesBackwards(move);
 	}
 
-	private void explodeIfNotMovingIntoEmptySpace(CheckersMove move) throws BadMoveException {
+	protected void explodeIfNotMovingIntoEmptySpace(CheckersMove move) throws BadMoveException {
 		if (board[move.getEndRow()][move.getEndCol()] != EMPTY) {
 			throw new BadMoveException("You can only move into empty spaces!");
 		}
 	}
 
-	private void explodeIfNormalPieceMovesBackwards(CheckersMove move) throws BadMoveException {
+	protected void explodeIfNormalPieceMovesBackwards(CheckersMove move) throws BadMoveException {
 		if (board[move.getStartRow()][move.getStartCol()] == RED_PLAIN && move.getStartRow() > move.getEndRow()) {
 			throw new BadMoveException("You cannot move/capture backwards!");
 		}
@@ -331,7 +331,7 @@ public class CheckersBoard {
 		}
 	}
 
-	private void explodeIfNotMovingOwnPiece(CheckersMove move) throws BadMoveException {
+	protected void explodeIfNotMovingOwnPiece(CheckersMove move) throws BadMoveException {
 		if (currentPlayer == Player.BLACK && Character.toLowerCase(board[move.getStartRow()][move.getStartCol()]) != 'b') {
 			throw new BadMoveException("You must move YOUR pieces!");
 		}
@@ -340,13 +340,13 @@ public class CheckersBoard {
 		}
 	}
 
-	private void explodeIfMoveIsOutsideOfBoard(CheckersMove move) throws BadMoveException {
+	protected void explodeIfMoveIsOutsideOfBoard(CheckersMove move) throws BadMoveException {
 		if (Stream.of(move.getStartRow(), move.getStartCol(), move.getEndRow(), move.getEndCol()).anyMatch(coord -> coord < 0 || coord > 7)) {
 			throw new BadMoveException("All coordinates must be between [0-7]!");
 		}
 	}
 
-	private void explodeIfNotCapturingEnemyPiece(CheckersMove capture) throws BadMoveException {
+	protected void explodeIfNotCapturingEnemyPiece(CheckersMove capture) throws BadMoveException {
 		CheckersMove.Position midPoint = capture.getMiddlePosition();
 		int middleRow = midPoint.getRow();
 		int middleCol = midPoint.getCol();
@@ -390,23 +390,23 @@ public class CheckersBoard {
 		crownPiecesOnBoard();
 	}
 
-	private void performMove(CheckersMove move) {
+	protected void performMove(CheckersMove move) {
 		board[move.getEndRow()][move.getEndCol()] = board[move.getStartRow()][move.getStartCol()];
 		board[move.getStartRow()][move.getStartCol()] = EMPTY;
 	}
 
-	private void performCapture(CheckersMove capture) {
+	protected void performCapture(CheckersMove capture) {
 		CheckersMove.Position midPoint = capture.getMiddlePosition();
 		board[capture.getEndRow()][capture.getEndCol()] = board[capture.getStartRow()][capture.getStartCol()];
 		board[midPoint.getRow()][midPoint.getCol()] = EMPTY;
 		board[capture.getStartRow()][capture.getStartCol()] = EMPTY;
 	}
 
-	private boolean isCaptureMove(CheckersMove move) {
+	protected boolean isCaptureMove(CheckersMove move) {
 		return Math.abs(move.getEndRow() - move.getStartRow()) == 2 && Math.abs(move.getEndCol() - move.getStartCol()) == 2;
 	}
 
-	private boolean isNormalMove(CheckersMove move) {
+	protected boolean isNormalMove(CheckersMove move) {
 		return Math.abs(move.getEndRow() - move.getStartRow()) == 1 && Math.abs(move.getEndCol() - move.getStartCol()) == 1;
 	}
 
@@ -478,7 +478,7 @@ public class CheckersBoard {
 		} while (true);
 	}
 
-	private boolean enemyCannotMove() {
+	protected boolean enemyCannotMove() {
 		// quickly switch over to the other player
 		// to check their possible moves/captures
 		Player otherPlayer = otherPlayer(currentPlayer);
