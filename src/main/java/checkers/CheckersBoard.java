@@ -123,18 +123,40 @@ public class CheckersBoard {
 		return startingBoard;
 	}
 
+	public String representation(char internal) {
+		if (internal == '*') {
+			return "\u2588\u2588\u2588";
+		}
+		return " " + internal + " ";
+	}
+
+	private void printTopOfBoard() {
+		System.out.println("   \u2554\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2564\u2550\u2550\u2550\u2557");
+	}
+	private void printBottomOfBoard() {
+		System.out.println("   \u255A\u2550\u2550\u2550\u2567\u2550\u2550\u2550\u2567\u2550\u2550\u2550\u2567\u2550\u2550\u2550\u2567\u2550\u2550\u2550\u2567\u2550\u2550\u2550\u2567\u2550\u2550\u2550\u2567\u2550\u2550\u2550\u255D");
+	}
+	private void printMiddleOfBoard() {
+		System.out.println("   \u255F\u2500\u2500\u2500\u253C\u2500\u2500\u2500\u253C\u2500\u2500\u2500\u253C\u2500\u2500\u2500\u253C\u2500\u2500\u2500\u253C\u2500\u2500\u2500\u253C\u2500\u2500\u2500\u253C\u2500\u2500\u2500\u2562");
+	}
+
 	public void printBoard() {
 		System.out.println("     0   1   2   3   4   5   6   7  ");
 		for (int i = 0; i < 8; i++) {
-			System.out.println("   " + "+---".repeat(8) + "+");
+			if (i==0) {
+				printTopOfBoard();
+			} else {
+				printMiddleOfBoard();
+			}
+			//System.out.println("   " + "+---".repeat(8) + "+");
 			System.out.print(i + "  ");
 			for (int j = 0; j < 8; j++) {
-				System.out.print("| " + board[i][j] + " ");
+				System.out.print((j == 0 ? "\u2551" : "\u2502") + representation(board[i][j]));
 			}
-			System.out.println("|");
+			System.out.println("\u2551");
 		}
-		System.out.println("   " + "+---".repeat(8) + "+");
-		System.out.println("The current player is: " + currentPlayer);
+		printBottomOfBoard();
+		System.out.println("The current player is: " + currentPlayer + " " + countPiecesOfPlayer(currentPlayer) + " pcs vs. " + countPiecesOfPlayer(otherPlayer()) + " pcs.");
 	}
 
 	public int countPiecesOfPlayer(Player player) {
